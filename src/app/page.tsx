@@ -1,65 +1,101 @@
-import Image from "next/image";
+// src/app/home/page.tsx
+import React from "react";
+import Link from "next/link";
 
-export default function Home() {
+type Dataset = {
+  id: string;
+  metadata: {
+    summary: {
+      title: string;
+      description: string;
+    };
+      accessibility: {
+        access: {
+        accessServiceCategory: string;
+        accessRights: string;
+      };
+    }
+  }
+};
+
+async function getDataset() {
+  const res = await fetch(
+    "https://raw.githubusercontent.com/HDRUK/hackathon-entity-linkage/refs/heads/dev/fe-implement/app/data/all_datasets.json",
+    { cache: "force-cache" }
+  )
+  return res.json()
+}
+
+const PAGE_SIZE = 15;
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(1, parseInt(typeof pageParam === "string" ? pageParam : "1", 10) || 1);
+
+  const dataset = await getDataset()
+
+  // get the unique items in the dataset as there are some duplicates
+  const unique: Dataset[] = Array.from(new Map((dataset as Dataset[]).map((item) => [item.id, item])).values())
+
+  const totalPages = Math.ceil(unique.length / PAGE_SIZE);
+  const pageItems = unique.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="max-w-screen-xl mx-auto px-6 py-8">
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Health Data Research UK Dataset</h1>
+
+      <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+        <table className="min-w-full divide-y divide-gray-200 text-sm">
+          <thead className="bg-gray-50">
+            <tr className="divide-x divide-gray-200">
+              <th className="px-4 py-3 text-left font-semibold text-gray-600 w-48">Title</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-600">Description</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-600 w-44">Access Category</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-600 w-44">Access Rights</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100 bg-white">
+            {pageItems.map((item: Dataset) => (
+              <tr key={item.id} className="hover:bg-gray-50 divide-x divide-gray-100">
+                <td className="px-4 py-3 font-medium text-gray-900 align-top">{item.metadata.summary.title}</td>
+                <td className="px-4 py-3 text-gray-600 align-top">{item.metadata.summary.description}</td>
+                <td className="px-4 py-3 text-gray-600 align-top">{item.metadata.accessibility.access.accessServiceCategory}</td>
+                <td className="px-4 py-3 align-top">
+                  <a href={item.metadata.accessibility.access.accessRights} className="text-blue-600 hover:underline break-all" target="_blank" rel="noreferrer">
+                    {item.metadata.accessibility.access.accessRights}
+                  </a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
+        <span>
+          Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, unique.length)} of {unique.length} datasets
+        </span>
+        <div className="flex gap-2">
+          {page > 1 ? (
+            <Link href={`?page=${page - 1}`} className="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100">
+              Previous
+            </Link>
+          ) : (
+            <span className="px-3 py-1 rounded border border-gray-200 text-gray-300 cursor-not-allowed">Previous</span>
+          )}
+          {page < totalPages ? (
+            <Link href={`?page=${page + 1}`} className="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100">
+              Next
+            </Link>
+          ) : (
+            <span className="px-3 py-1 rounded border border-gray-200 text-gray-300 cursor-not-allowed">Next</span>
+          )}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </div>
     </div>
   );
 }

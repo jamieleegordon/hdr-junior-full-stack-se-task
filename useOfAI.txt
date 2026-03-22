@@ -1,0 +1,9 @@
+Use of AI:
+
+Tool used: Claude Code and ChatGPT
+
+Prompts used:
+
+- (Claude Code) Provide me with the TailWindCSS classes and styling for my table (this helped me do the styling for the table)
+- (ChatGPT) Give me the code to help filter the current dataset, as there are some duplicates (this helped me fix a bug, where there were multiple items with the same key(id), which was causing issues do to there being duplicate items, so this helped me filter those out)
+- (ChatGPT) Give me some boilerplate code for a table in tsx (this gave me the boilerplate code for creating the table, which I then manually adapted)
